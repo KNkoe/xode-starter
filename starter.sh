@@ -1,4 +1,16 @@
 #!/usr/bin/env bash
+
+# This script is used to create a new T3 - Xode v1.0 project.
+# It will create a new project with the following features:
+# - Login and Register pages
+# - Home page
+# - Prisma ORM
+# - Tailwind CSS
+# - Shadcn UI
+# - BetterAuth
+
+# Run with : curl -sSL https://github.com/KNkoe/Starter-script/blob/04f144acae3ad3522ce5128e1eebff1193d81a6c/starter.sh | bash
+
 set -e
 
 PROJECT=$1
