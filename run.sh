@@ -27,31 +27,52 @@ npx create-t3-app@latest "$PROJECT" --CI --trpc --prisma --tailwind --dbProvider
 cd "$PROJECT"
 
 # 2. Configure @ import alias in tsconfig.json
-if [ -f "tsconfig.json" ]; then
-  if ! grep -q '"@/\*"' tsconfig.json; then
-    echo "⚠️  Adding @ import alias to tsconfig.json manually..."
-    echo "Please add the following to your tsconfig.json compilerOptions:"
-    echo '    "paths": {'
-    echo '      "@/*": ["./src/*"]'
-    echo '    },'
-  else
-    echo "✅ @ import alias already configured"
-  fi
-fi
+rm -rf tsconfig.json
+cat > tsconfig.json <<'EOF'
+{
+  "compilerOptions": {
+    /* Base Options: */
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
 
-# 3. Check if alias is added
-echo "--------------------------------"
-echo "Checking if alias is added..."
-echo "--------------------------------"
-echo "✅ Are you done with adding alias? (y/n)"
-echo "--------------------------------"
-read done
-if [ "$done" != "y" ]; then
-  echo "Please add the following to your tsconfig.json compilerOptions:"
-  echo '    "paths": {'
-  echo '      "@/*": ["./src/*"]'
-  echo '    },'
-fi
+    /* Strictness */
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "checkJs": true,
+
+    /* Bundled projects */
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "plugins": [{ "name": "next" }],
+    "incremental": true,
+
+    /* Path Aliases */
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["./src/*"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.cjs",
+    "**/*.js",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}
+EOF
 
 # 3. Initialize shadcn/ui (default options, no interactivity)
 npx shadcn@latest init -y
