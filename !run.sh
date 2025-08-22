@@ -8,8 +8,9 @@
 # - Tailwind CSS
 # - Shadcn UI
 # - BetterAuth
+# - Postgres Database
 
-# Run with : curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/starter.sh | bash
+# Run with : curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/!run.sh | bash
 
 set -e
 
