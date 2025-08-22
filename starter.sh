@@ -9,7 +9,7 @@
 # - Shadcn UI
 # - BetterAuth
 
-# Run with : curl -sSL https://github.com/KNkoe/Starter-script/blob/04f144acae3ad3522ce5128e1eebff1193d81a6c/starter.sh | bash
+# Run with : curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/starter.sh | bash
 
 set -e
 
