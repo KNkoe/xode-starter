@@ -469,12 +469,18 @@ EOF
 rm -rf src/app/page.tsx
 cat > "src/app/page.tsx" <<'EOF'
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { headers } from "next/headers";
 
 export default async function Home() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
   const hello = await api.post.hello({ text: "from tRPC" });
 
   void api.post.getLatest.prefetch();
@@ -517,18 +523,33 @@ export default async function Home() {
                   {hello ? hello.greeting : "Loading tRPC query..."}
                 </p>
               </div>
-              <div className="flex gap-4 w-full justify-center">
-                <Link href="/login" passHref>
-                  <Button variant="secondary" className="w-32">
-                    Login
+              {session ? (
+                <div className="flex gap-4 w-full justify-center">
+                  <Link href="/dashboard" passHref>
+                    <Button variant="secondary" className="w-32">
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Button variant="destructive" className="w-32" onClick={() => auth.api.signOut({
+                    headers: await headers(),
+                  })}>
+                    Logout
                   </Button>
-                </Link>
-                <Link href="/register" passHref>
-                  <Button variant="default" className="w-32">
-                    Sign Up
-                  </Button>
-                </Link>
-              </div>
+                </div>
+              ) : (
+                <div className="flex gap-4 w-full justify-center">
+                  <Link href="/login" passHref>
+                    <Button variant="secondary" className="w-32">
+                      Login
+                    </Button>
+                  </Link>
+                  <Link href="/register" passHref>
+                    <Button variant="default" className="w-32">
+                      Sign Up
+                    </Button>
+                  </Link>
+                </div>
+              )}  
               <div className="w-full">
                 <LatestPost />
               </div>
