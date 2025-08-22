@@ -10,7 +10,9 @@
 # - BetterAuth
 # - Postgres Database
 
-# Run with : curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/run.sh | bash
+# Run with : bash <(curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/run.sh) my-project-name
+
+# Add to your shell config file : alias start-project='bash <(curl -sSL https://raw.githubusercontent.com/KNkoe/xode-starter/master/run.sh)'
 
 set -e
 
@@ -311,7 +313,93 @@ export default function LoginPage() {
 }
 EOF
 
-# 14. Create App Router register page
+# 14. Add signout button component
+cat > "src/app/_components/signout-button.tsx" <<'EOF'
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { authClient } from "~/lib/auth-client";
+import { Loader2 } from "lucide-react";
+
+export function SignoutButton() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSignOut() {
+    setIsLoading(true);
+    try {
+      await authClient.signOut();
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  return (
+    <Button
+      variant="destructive"
+      className="w-32"
+      onClick={handleSignOut}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <span className="flex items-center justify-center gap-2">
+          <Loader2 className="animate-spin h-4 w-4" />
+          Logging out...
+        </span>
+      ) : (
+        "Logout"
+      )}
+    </Button>
+  );
+}
+EOF
+
+# 14.1. Add auth buttons component
+cat > "src/app/_components/auth-buttons.tsx" <<'EOF'
+"use client";
+
+import Link from "next/link";
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { authClient } from "~/lib/auth-client";
+import { SignoutButton } from "./signout-button";
+import { Loader2 } from "lucide-react";
+
+export default function AuthButtons() {
+  const { data: session , isPending} = authClient.useSession();
+
+  if (isPending) {
+    return <div className="flex gap-4 justify-center">
+        <Loader2 className="animate-spin h-4 w-4" />
+    </div>;
+  }
+
+  return (
+    <div>
+      <div className="flex gap-4 justify-center">
+        {session?.user ? (
+          <SignoutButton />
+        ) : (
+          <>
+            <Link href="/login">
+              <Button variant="secondary" className="w-32">
+                Login
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button variant="default" className="w-32">
+                Sign Up
+              </Button>
+                </Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+EOF
+
+# 14.2. Create App Router register page
 cat > "src/app/(auth)/register/page.tsx" <<'EOF'
 "use client";
 
@@ -470,100 +558,139 @@ EOF
 rm -rf src/app/page.tsx
 cat > "src/app/page.tsx" <<'EOF'
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { LatestPost } from "~/app/_components/post";
 import { api, HydrateClient } from "~/trpc/server";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { headers } from "next/headers";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { SignoutButton } from "~/app/_components/signout-button";
+import AuthButtons from "./_components/auth-buttons";
 
 export default async function Home() {
-  const session = await auth.api.getSession({
-    headers: await headers(),
-  });
-
   const hello = await api.post.hello({ text: "from tRPC" });
 
   void api.post.getLatest.prefetch();
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <Card className="w-full max-w-2xl bg-white/10 border-none shadow-lg">
-            <CardContent className="flex flex-col items-center gap-8 py-10">
-              <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem] text-white">
-                Create <span className="text-[hsl(280,100%,70%)]">T3 - Xode v1.0</span> App
-              </h1>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8 w-full">
-                <Link
-                  className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20 transition-colors"
-                  href="https://create.t3.gg/en/usage/first-steps"
-                  target="_blank"
-                >
-                  <h3 className="text-2xl font-bold text-white">First Steps →</h3>
-                  <div className="text-lg text-white/80">
-                    Just the basics - Everything you need to know to set up your
-                    database and authentication.
-                  </div>
-                </Link>
-                <Link
-                  className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20 transition-colors"
-                  href="https://create.t3.gg/en/introduction"
-                  target="_blank"
-                >
-                  <h3 className="text-2xl font-bold text-white">Documentation →</h3>
-                  <div className="text-lg text-white/80">
-                    Learn more about Create T3 App, the libraries it uses, and how
-                    to deploy it.
-                  </div>
-                </Link>
-              </div>
-              <div className="flex flex-col items-center gap-2 w-full">
-                <p className="text-2xl text-white">
-                  {hello ? hello.greeting : "Loading tRPC query..."}
-                </p>
-              </div>
-              {session ? (
-                <div className="flex gap-4 w-full justify-center">
-                  <Link href="/dashboard" passHref>
-                    <Button variant="secondary" className="w-32">
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Button variant="destructive" className="w-32" onClick={() => auth.api.signOut({
-                    headers: await headers(),
-                  })}>
-                    Logout
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-4 w-full justify-center">
-                  <Link href="/login" passHref>
-                    <Button variant="secondary" className="w-32">
-                      Login
-                    </Button>
-                  </Link>
-                  <Link href="/register" passHref>
-                    <Button variant="default" className="w-32">
-                      Sign Up
-                    </Button>
-                  </Link>
-                </div>
-              )}  
-              <div className="w-full">
-                <LatestPost />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <main className="flex min-h-screen items-center justify-center bg-muted">
+        <Card className="w-full max-w-xl mx-auto shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-center">
+              T3 - Xode v1.0
+            </CardTitle>
+            <CardDescription className="text-center">
+              A modern starter with tRPC, Next.js, shadcn/ui, and more.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Link href="https://create.t3.gg/en/usage/first-steps" target="_blank">
+                <Card className="hover:bg-accent transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg">First Steps →</CardTitle>
+                    <CardDescription>
+                      Everything you need to set up your database and authentication.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+              <Link href="https://create.t3.gg/en/introduction" target="_blank">
+                <Card className="hover:bg-accent transition-colors">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Documentation →</CardTitle>
+                    <CardDescription>
+                      Learn more about Create T3 App, the libraries it uses, and deployment.
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-xl font-medium">
+                {hello ? hello.greeting : "Loading tRPC query..."}
+              </span>
+            </div>
+            <AuthButtons />
+            <div>
+              <LatestPost />
+            </div>
+          </CardContent>
+        </Card>
       </main>
     </HydrateClient>
   );
 }
 EOF
 
-# 16. Update README.md
+#16 Update post component
+rm -rf src/app/_components/post.tsx
+cat > "src/app/_components/post.tsx" <<'EOF'
+"use client";
+
+import { useState } from "react";
+import { api } from "~/trpc/react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+
+export function LatestPost() {
+  const [latestPost] = api.post.getLatest.useSuspenseQuery();
+
+  const utils = api.useUtils();
+  const [name, setName] = useState("");
+  const createPost = api.post.create.useMutation({
+    onSuccess: async () => {
+      await utils.post.invalidate();
+      setName("");
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Latest Post</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {latestPost ? (
+          <p className="truncate mb-4 text-muted-foreground">
+            Your most recent post: <span className="font-medium">{latestPost.name}</span>
+          </p>
+        ) : (
+          <p className="mb-4 text-muted-foreground">You have no posts yet.</p>
+        )}
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            createPost.mutate({ name });
+          }}
+          className="flex flex-col gap-3"
+        >
+          <Label htmlFor="post-title">Title</Label>
+          <Input
+            id="post-title"
+            type="text"
+            placeholder="Title"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            disabled={createPost.isPending}
+            className="w-full"
+          />
+          <Button
+            type="submit"
+            disabled={createPost.isPending || !name.trim()}
+            className="w-full"
+            variant="default"
+          >
+            {createPost.isPending ? "Submitting..." : "Submit"}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+EOF
+
+# 17. Update README.md
 cat > "README.md" <<'EOF'
 # T3 - Xode v1.0
 
