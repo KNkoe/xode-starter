@@ -174,7 +174,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function LoginForm({
+function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
@@ -433,7 +433,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function RegisterForm({
+function RegisterForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
